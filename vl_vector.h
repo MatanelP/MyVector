@@ -5,14 +5,18 @@
 #ifndef _VL_VECTOR_H_
 #define _VL_VECTOR_H_
 
+#include <iostream>
+#include <iterator>
+
 #define STATIC_CAP 16
+#define CAP_CHANGE_VAL 1.5
 
 template<class T, size_t StaticCapacity = STATIC_CAP>
 class vl_vector {
 
- private:
-  size_t _size;
+ protected:
   size_t _capacity;
+  size_t _size;
   bool _array_is_static;
 
   T _static_array[StaticCapacity];
@@ -26,7 +30,7 @@ class vl_vector {
           return 0; //no cap change, keep data in static array
         return 1; //no cap change, keep data in dynamic array
       }
-    _capacity = 1.5 * (_size + num_of_new_values);
+    _capacity = CAP_CHANGE_VAL * (_size + num_of_new_values);
     if (_array_is_static)
       {
         return 2; //cap change, move data to a dynamic array
@@ -48,18 +52,14 @@ class vl_vector {
   /**
    * TODO - DELETE THIS:
    */
-//  void print_dynamic_array (T *array)
-//  {
-////    std::cout << "dynamic array is active: " << !_array_is_static << std::endl;
-////    std::cout << "current capacity: " << _capacity << " ,current size: " << _size
-////              << std::endl;
-////    std::cout << "current elements in dynamic array:" << std::endl;
-//    for (size_t i = 0; i < _size; ++i)
-//      {
-//        std::cout << array[i] << " ";
-//      }
-//    std::cout << std::endl;
-//  }
+  void print_dynamic_array (const T *array) const
+  {
+    for (size_t i = 0; i < _size; ++i)
+      {
+        std::cout << array[i] << " ";
+      }
+    std::cout << std::endl;
+  }
 
   /*********************
   *      Iterators     *
@@ -76,7 +76,7 @@ class vl_vector {
 
   iterator end ()
   {
-    return _array_is_static ? _static_array + _size : _dynamic_array + _size;
+    return _array_is_static ? _static_array + size() : _dynamic_array + size();
   }
 
   const_iterator begin () const
@@ -86,7 +86,7 @@ class vl_vector {
 
   const_iterator end () const
   {
-    return _array_is_static ? _static_array + _size : _dynamic_array + _size;
+    return _array_is_static ? _static_array + size() : _dynamic_array + size();
   }
 
   const_iterator cbegin () const
@@ -96,14 +96,14 @@ class vl_vector {
 
   const_iterator cend () const
   {
-    return _array_is_static ? _static_array + _size : _dynamic_array + _size;
+    return _array_is_static ? _static_array + size() : _dynamic_array + size();
   }
   reverse_iterator rbegin ()
   {
     return reverse_iterator (end ());
   }
 
-  reverse_iterator rend ()
+   reverse_iterator rend ()
   {
     return reverse_iterator (begin ());
   }
@@ -113,17 +113,17 @@ class vl_vector {
     return const_reverse_iterator (cend ());
   }
 
-  const_reverse_iterator rend () const
+   const_reverse_iterator rend () const
   {
     return const_reverse_iterator (cbegin ());
   }
 
-  const_reverse_iterator crbegin () const
+  virtual const_reverse_iterator crbegin () const
   {
     return const_reverse_iterator (cend ());
   }
 
-  const_reverse_iterator crend () const
+   const_reverse_iterator crend () const
   {
     return const_reverse_iterator (cbegin ());
   }
@@ -139,13 +139,16 @@ class vl_vector {
 
   /** copy constructor */
   vl_vector (vl_vector<T, StaticCapacity> const &other) :
-      _size (other._size), _capacity (other._capacity),
+      _capacity (other._capacity), _size (other._size),
       _array_is_static (other._array_is_static)
   {
-    for (const auto &val : other)
+    if (!_array_is_static)
       {
-        push_back (val);
+        _dynamic_array = new T[_capacity];
+        std::copy (other.begin (), other.end (), _dynamic_array);
       }
+    else
+      std::copy (other.begin (), other.end (), _static_array);
   }
 
   /** sequence based constructor constructor */
@@ -154,7 +157,8 @@ class vl_vector {
   {
     _capacity = StaticCapacity;
     _size = 0;
-    _array_is_static = (std::distance (first, last) <= StaticCapacity);
+    _array_is_static = ((size_t) std::distance (first, last)
+                        <= StaticCapacity);
     if (!_array_is_static)
       _dynamic_array = new T[std::distance (first, last)];
     insert (cbegin (), first, last);
@@ -162,9 +166,20 @@ class vl_vector {
 
   /** single-value initialized constructor */
   vl_vector (const size_t count, T value) :
-      _capacity (StaticCapacity), _size (0), _array_is_static (true)
+      _capacity ((size_t) (CAP_CHANGE_VAL * (double) count)), _size (count),
+      _array_is_static (false)
   {
-//    insert
+    T *array = new T[count];
+    std::fill (array, array + count, value);
+    _dynamic_array = array;
+    if (count <= StaticCapacity)
+      {
+        _capacity = StaticCapacity;
+        _array_is_static = true;
+        std::copy (array, array + count, _static_array);
+        _size = count;
+        delete[] array;
+      }
   }
 
   /** destructor */
@@ -257,20 +272,20 @@ class vl_vector {
 
  public:
 
-  size_t size () const
+  virtual size_t size () const
   { return _size; }
 
   size_t capacity () const
   { return _capacity; }
 
-  bool empty () const
+  virtual bool empty () const
   { return _size == 0; }
 
   T at (size_t index) const
   {
     if (index < 0 || index >= _size)
       {
-        throw std::out_of_range("Index out of range");
+        throw std::out_of_range ("Index out of range");
       }
     return _array_is_static ? _static_array[index] : _dynamic_array[index];
   }
@@ -278,7 +293,7 @@ class vl_vector {
   {
     if (index < 0 || index >= _size)
       {
-        throw std::out_of_range("Index out of range");
+        throw std::out_of_range ("Index out of range");
       }
     return _array_is_static ? _static_array[index] : _dynamic_array[index];
   }
@@ -287,8 +302,6 @@ class vl_vector {
   {
     insert (end (), value);
   }
-
- public:
 
 //  todo: make sure return type.
   iterator insert (const_iterator c_position, const T elem)
@@ -384,16 +397,37 @@ class vl_vector {
   {
     return _array_is_static ? _static_array : _dynamic_array;
   }
-  bool contains (const T &val) const
+  virtual bool contains (const T val) const
   {
-    return std::find (begin (), end (), val) != end ();
+    return true;//std::find (begin (), end (), val) != end ();
   }
 
   /*********************
   *      OPERATORS     *
   **********************/
 
+  vl_vector &operator= (const vl_vector &other)
+  {
+    if (this == &other)
+      {
+        return *this;
+      }
+    _capacity = other._capacity;
+    _array_is_static = other._array_is_static;
+    if (_array_is_static)
+      {
+        std::copy (other.begin (), other.end (), _static_array);
+        _size = other._size;
+        return *this;
+      }
+    if (!empty ())
+      delete[] _dynamic_array;
+    _dynamic_array = new T[_capacity];
+    std::copy (other.begin (), other.end (), _dynamic_array);
+    _size = other._size;
+    return *this;
 
+  }
 
   T &operator[] (int i)
   {
@@ -412,7 +446,7 @@ class vl_vector {
   }
   bool operator!= (const vl_vector &rhs) const
   {
-    return rhs != *this;
+    return !(rhs == *this);
   }
 
 };
