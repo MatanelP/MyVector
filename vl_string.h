@@ -1,6 +1,9 @@
 //
 // Created by Matanel on 16/06/2021.
 //
+// SPECIALIZATION OF VL_VECTOR FOR STRINGS OF CHAR
+//
+// please see vl_vector.h for references
 
 #ifndef _VL_STRING_H_
 #define _VL_STRING_H_
