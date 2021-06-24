@@ -183,7 +183,7 @@ class vl_vector {
   }
 
   /** destructor */
-  ~vl_vector ()
+  virtual ~vl_vector ()
   {
     if (!_array_is_static)
       delete[] _dynamic_array;
