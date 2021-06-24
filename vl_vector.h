@@ -76,7 +76,7 @@ class vl_vector {
 
   iterator end ()
   {
-    return _array_is_static ? _static_array + size() : _dynamic_array + size();
+    return _array_is_static ? _static_array + _size : _dynamic_array + _size;
   }
 
   const_iterator begin () const
@@ -86,7 +86,7 @@ class vl_vector {
 
   const_iterator end () const
   {
-    return _array_is_static ? _static_array + size() : _dynamic_array + size();
+    return _array_is_static ? _static_array + _size : _dynamic_array + _size;
   }
 
   const_iterator cbegin () const
@@ -96,14 +96,14 @@ class vl_vector {
 
   const_iterator cend () const
   {
-    return _array_is_static ? _static_array + size() : _dynamic_array + size();
+    return _array_is_static ? _static_array + _size : _dynamic_array + _size;
   }
   reverse_iterator rbegin ()
   {
     return reverse_iterator (end ());
   }
 
-   reverse_iterator rend ()
+  reverse_iterator rend ()
   {
     return reverse_iterator (begin ());
   }
@@ -113,17 +113,17 @@ class vl_vector {
     return const_reverse_iterator (cend ());
   }
 
-   const_reverse_iterator rend () const
+  const_reverse_iterator rend () const
   {
     return const_reverse_iterator (cbegin ());
   }
 
-  virtual const_reverse_iterator crbegin () const
+  const_reverse_iterator crbegin () const
   {
     return const_reverse_iterator (cend ());
   }
 
-   const_reverse_iterator crend () const
+  const_reverse_iterator crend () const
   {
     return const_reverse_iterator (cbegin ());
   }
@@ -278,8 +278,8 @@ class vl_vector {
   size_t capacity () const
   { return _capacity; }
 
-  virtual bool empty () const
-  { return _size == 0; }
+  bool empty () const
+  { return !size (); }
 
   T at (size_t index) const
   {
@@ -298,7 +298,7 @@ class vl_vector {
     return _array_is_static ? _static_array[index] : _dynamic_array[index];
   }
 
-  void push_back (const T &value)
+  virtual void push_back (const T &value)
   {
     insert (end (), value);
   }
@@ -346,7 +346,7 @@ class vl_vector {
       }
   }
 
-  void pop_back ()
+  virtual void pop_back ()
   {
     erase (cend () - 1);
   }
@@ -384,7 +384,7 @@ class vl_vector {
     return (iterator) first;
   }
 
-  void clear ()
+  virtual void clear ()
   {
     erase (begin (), end ());
   }
@@ -397,9 +397,9 @@ class vl_vector {
   {
     return _array_is_static ? _static_array : _dynamic_array;
   }
-  virtual bool contains (const T val) const
+  bool contains (const T val) const
   {
-    return true;//std::find (begin (), end (), val) != end ();
+    return std::find (begin (), end (), val) != end ();
   }
 
   /*********************

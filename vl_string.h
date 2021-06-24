@@ -14,75 +14,73 @@ class vl_string : public vl_vector<char, StaticCapacity> {
 
   vl_string () : vl_vector<char, StaticCapacity> ()
   {
-    add_null = true;
-//    this->_size++;
-//    this->at (size ()) = '\0';
-    this->insert (this->end (), '\0');
-    add_null = false;
-
+    this->data ()[0] = '\0';
+    this->_size++;
   }
 
   vl_string (const vl_string &other) : vl_vector<char, StaticCapacity> (other)
-  {
-    add_null = false;
-  }
+  {}
 
   vl_string (const char *str) :
-      vl_vector<char, StaticCapacity> (str, str + strlen (str))
+      vl_vector<char, StaticCapacity> (str, str + strlen (str) + 1)
   {
-    add_null = true;
-    this->insert (this->end (), '\0');
-    add_null = false;
+    this->data ()[size ()] = '\0';
   }
 
   size_t size () const override
   {
-    if (add_null)
+    return this->_size - 1;
+  }
+
+  void push_back (const char &value) override
+  {
+    this->insert (this->end () - 1, value);
+  }
+
+  void pop_back () override
+  {
+    this->erase (this->cend () - 2);
+  }
+
+  void clear () override
+  {
+    this->erase (this->begin (), this->end () - 1);
+  }
+
+  bool contains (const char *str) const
+  {
+    for (size_t i = 0; i < this->_size; ++i)
       {
-        return this->_size;
+        if (this->at (i) == str[0])
+          {
+            for (size_t j = 1; j < strlen (str); ++j)
+              {
+                if (this->at (i + j) != str[j])
+                  return false;
+              }
+            return true;
+          }
       }
-    return this->_size -1;
-  }
+    return false;
 
-  bool empty () const override
-  {
-    return this->_size == 1;
-  }
-
-  bool contains (const char str) const override
-  {
-//    for (auto const& c : *this)
-//    {
-//      if (c == str[0])
-//        {
-//          for(size_t i = 1; i < strlen (str) ; i++)
-//            {
-//              if ((c+i) != str[i])
-//                return false;
-//            }
-//        }
-//    }
-    return true;
   }
 
   vl_string &operator+= (const vl_string &other)
   {
-    this->insert (this->end (), other.begin (), other.end ());
+    this->insert (this->end () - 1, other.begin (), other.end () - 1);
     return *this;
   }
 
   vl_string &operator+= (const char *str)
   {
-    this->insert (this->end (), str, str + strlen (str));
+    this->insert (this->end () - 1, str, str + strlen (str));
     return *this;
-
   }
 
   vl_string &operator+= (const char c)
   {
-    this->push_back (c);
+    push_back (c);
     return *this;
-
   }
 
   vl_string operator+ (const vl_string &other)
@@ -99,11 +97,12 @@ class vl_string : public vl_vector<char, StaticCapacity> {
   vl_string operator+ (const char c)
   {
     return vl_string<> (*this += c);
-
   }
 
- private:
-  bool add_null;
+  operator const char * () const
+  {
+    return this->data ();
+  }
 
 };
 
