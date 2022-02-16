@@ -1,1 +1,1 @@
-# ex6-matanel.pataki
+matanel.pataki
